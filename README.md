@@ -2,6 +2,9 @@
 Modification of the [extension](https://github.com/DapperLib/Dapper.Contrib/blob/main/src/Dapper.Contrib/SqlMapperExtensions.cs) in terms of field mapping
 ### Example using
 ```csharp
+using Dapper;
+using Dapper.Contrib.Extensions;
+
 [Table("Users")]
 public class User
 {
