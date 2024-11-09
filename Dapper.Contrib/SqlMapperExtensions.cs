@@ -1,17 +1,19 @@
-﻿using Dapper;
-using System;
-using System.Collections.Concurrent;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Text;
+using System.Collections.Concurrent;
+using System.Reflection.Emit;
+using System.Threading;
+
+using Dapper;
 
 namespace Dapper.Contrib.Extensions
 {
     /// <summary>
-    /// The Dapper.Contrib extensions for Dapper
+    /// Расширения Dapper.Contrib для Dapper
     /// </summary>
     public static partial class SqlMapperExtensions
     {
@@ -22,38 +24,38 @@ namespace Dapper.Contrib.Extensions
         }
 
         /// <summary>
-        /// Defined a proxy object with a possibly dirty state.
+        /// Определен прокси-объект с возможно грязным состоянием.
         /// </summary>
         public interface IProxy //must be kept public
         {
             /// <summary>
-            /// Whether the object has been changed.
+            /// Был ли изменен объект.
             /// </summary>
             bool IsDirty { get; set; }
         }
 
         /// <summary>
-        /// Defines a table name mapper for getting table names from types.
+        /// Определяет средство сопоставления имен таблиц для получения имен таблиц из типов.
         /// </summary>
         public interface ITableNameMapper
         {
             /// <summary>
-            /// Gets a table name from a given <see cref="Type"/>.
+            /// Получает имя таблицы из заданного <see cref="Type"/>.
             /// </summary>
-            /// <param name="type">The <see cref="Type"/> to get a name from.</param>
-            /// <returns>The table name for the given <paramref name="type"/>.</returns>
+            /// <param name="type">Чтобы получить имя <see cref="Type"/>.</param>
+            /// <returns>Имя таблицы для данного <paramref name="type"/>.</returns>
             string GetTableName(Type type);
         }
 
         /// <summary>
-        /// The function to get a database type from the given <see cref="IDbConnection"/>.
+        /// Функция для получения типа базы данных из заданного <see cref="IDbConnection"/>.
         /// </summary>
-        /// <param name="connection">The connection to get a database type name from.</param>
+        /// <param name="connection">Соединение для получения имени типа базы данных.</param>
         public delegate string GetDatabaseTypeDelegate(IDbConnection connection);
         /// <summary>
-        /// The function to get a table name from a given <see cref="Type"/>
+        /// Функция для получения имени таблицы из заданного <see cref="Type"/>
         /// </summary>
-        /// <param name="type">The <see cref="Type"/> to get a table name for.</param>
+        /// <param name="type">Для получения имени таблицы <see cref="Type"/> </param>
         public delegate string TableNameMapperDelegate(Type type);
 
         private static readonly ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> KeyProperties = new ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>>();
@@ -449,7 +451,7 @@ namespace Dapper.Contrib.Extensions
                 }
             }
 
-            var keyProperties = KeyPropertiesCache(type).ToList();  //added ToList() due to issue #418, must work on a list copy
+            var keyProperties = KeyPropertiesCache(type).ToList();
             var explicitKeyProperties = ExplicitKeyPropertiesCache(type);
             if (keyProperties.Count == 0 && explicitKeyProperties.Count == 0)
                 throw new ArgumentException("Entity must have at least one [Key] or [ExplicitKey] property");
@@ -476,11 +478,11 @@ namespace Dapper.Contrib.Extensions
 
                 if (!string.IsNullOrEmpty(columnName))
                 {
-                    adapter.AppendColumnNameEqualsValue(sb, columnName, property.Name);  //fix for issue #336
+                    adapter.AppendColumnNameEqualsValue(sb, columnName, property.Name);
                 }
                 else
                 {
-                    adapter.AppendColumnNameEqualsValue(sb, property.Name);  //fix for issue #336
+                    adapter.AppendColumnNameEqualsValue(sb, property.Name);
                 }
 
                 
@@ -490,7 +492,8 @@ namespace Dapper.Contrib.Extensions
             sb.Append(" where ");
             for (var i = 0; i < keyProperties.Count; i++)
             {
-                var property = nonIdProps[i];
+                //var property = nonIdProps[i];
+                var property = keyProperties[i];
 
                 var columnAttribute = property?.GetCustomAttributes(typeof(ColumnAttribute), false).FirstOrDefault() as ColumnAttribute;
 
@@ -542,7 +545,7 @@ namespace Dapper.Contrib.Extensions
                 }
             }
 
-            var keyProperties = KeyPropertiesCache(type).ToList();  //added ToList() due to issue #418, must work on a list copy
+            var keyProperties = KeyPropertiesCache(type).ToList();
             var explicitKeyProperties = ExplicitKeyPropertiesCache(type);
             if (keyProperties.Count == 0 && explicitKeyProperties.Count == 0)
                 throw new ArgumentException("Entity must have at least one [Key] or [ExplicitKey] property");
@@ -558,7 +561,7 @@ namespace Dapper.Contrib.Extensions
             for (var i = 0; i < keyProperties.Count; i++)
             {
                 var property = keyProperties[i];
-                adapter.AppendColumnNameEqualsValue(sb, property.Name);  //fix for issue #336
+                adapter.AppendColumnNameEqualsValue(sb, property.Name);
                 if (i < keyProperties.Count - 1)
                     sb.Append(" and ");
             }
